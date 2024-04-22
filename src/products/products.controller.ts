@@ -1,5 +1,6 @@
 import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Query } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
+import { firstValueFrom } from 'rxjs';
 import { PaginationDto } from 'src/common';
 import { PRODUCT_SERVICE } from 'src/config';
 
@@ -20,8 +21,13 @@ export class ProductsController {
   }
 
   @Get(':id')
-  findProductById(@Param('id') id: string){
-    return 'This action returns a product';
+  async findProductById(@Param('id') id: string){
+    try {
+      const product = await firstValueFrom(this.productsClient.send({ cmd: 'find_one_product' }, { id }));
+      return product;
+    } catch (error) {
+      throw new RpcException(error);
+    }
   }
 
   @Patch(':id')
